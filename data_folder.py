@@ -1,4 +1,5 @@
-data_folder = "D://Data/cloudcmp/"
+# data_folder = "D://Data/cloudcmp/"
+data_folder = "/Users/chenw/Data/cloudCMP/"
 
 geographical_data_folder = data_folder + "geographical-coverage/"
 scalability_data_folder = data_folder + "scalability/"

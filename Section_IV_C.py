@@ -5,6 +5,7 @@ from utc2locale import *
 from load_session_qoe import *
 import numpy as np
 import matplotlib.pyplot as plt
+from drawlibs.draw_cdf import *
 import pprint
 
 styles = ['k-', 'b.-', 'r--', 'm:', 'ys-', 'go-', 'c^-',
@@ -57,7 +58,7 @@ def comare_clouds_qoes_daily(user):
     plt.show()
 
 
-def comare_clouds_latencies_daily(user):
+def compare_clouds_latencies_daily(user):
     ## Google QoE from user in 24 hours
     google_ping_folder = stability_data_folder + "google/pingData/"
     google_daily_rtts = load_ping_daily(google_ping_folder, user)
@@ -123,7 +124,44 @@ def cmp_cloudcdns_qoe_stability_per_tz(provider, tz, styleID=0):
     plt.savefig(imgName + ".png")
     plt.show()
 
+def cmp_cloudcdns_qoes_cdf_per_hours(hours, hoursName):
+    google_folder = stability_data_folder + "/google/dataQoE/"
+    google_qoes = get_all_qoes_in_local_period(google_folder, hours)
 
+    azure_folder = stability_data_folder + "/azure/dataQoE/"
+    azure_qoes = get_all_qoes_in_local_period(azure_folder, hours)
+
+    amazon_folder = stability_data_folder + "/amazon/dataQoE/"
+    amazon_qoes = get_all_qoes_in_local_period(amazon_folder, hours)
+
+    fig, ax = plt.subplots()
+
+    draw_cdf(google_qoes, styles[0], "Google Cloud CDN")
+    draw_cdf(azure_qoes, styles[1], "Azure CDN (Verizon)")
+    draw_cdf(amazon_qoes, styles[2], "Amazon CloudFront")
+
+    ax.set_xlabel(r'Session QoE (0-5)', fontsize=18)
+    ax.set_ylabel(r'Percentage of PlanetLab users', fontsize=18)
+    plt.xlim([0, 5])
+    plt.ylim([0, 1])
+    plt.legend(loc=2)
+
+    imgName = img_folder + "cmp_cloudcdns_QoEcdf_" + hoursName
+    plt.savefig(imgName + ".jpg")
+    plt.savefig(imgName + ".pdf")
+    plt.savefig(imgName + ".png")
+    plt.show()
+
+
+
+def get_all_qoes_in_local_period(qoe_folder, hours):
+    qoes = load_session_qoes_per_tz_hour(qoe_folder)
+    qoes_in_period = []
+    for tz in qoes:
+        for h in qoes[tz]:
+            if h in hours:
+                qoes_in_period.extend(qoes[tz][h])
+    return qoes_in_period
 
 def load_session_qoes_daily(qoe_folder, user):
     all_user_files = glob.glob(qoe_folder + user + "*")
@@ -185,7 +223,7 @@ if __name__ == '__main__':
     print("Compare Cloud CDN for user in %s."%user_timezone["timezoneId"])
     comare_clouds_qoes_daily(user)
     comare_clouds_latencies_daily(user)
-    '''
+    
 
 
     ## Draw QoE hourly error bars
@@ -197,11 +235,31 @@ if __name__ == '__main__':
             cmp_cloudcdns_qoe_stability_per_tz(provider, tz, pid)
             pid += 1
 
+
     ## Count mean and STD for all session QoEs in different time zones in 24 hours
     providers = ['google', 'amazon', 'azure']
     for provider in providers:
         qoe_folder = stability_data_folder + provider + "/dataQoE/"
         qoes_per_tz_hour = load_session_qoes_per_tz_hour(qoe_folder)
+
+        for tz in qoes_per_tz_hour:
+            all_session_qoes = []
+            cur_tz_qoes = qoes_per_tz_hour[tz]
+            for hour in cur_tz_qoes:
+                all_session_qoes.extend(cur_tz_qoes[hour])
+
+            mn_qoes = np.mean(all_session_qoes)
+            std_qoes = np.std(all_session_qoes)
+            print("The daily Mean and STD of all session QoEs in time zone %s for %s "
+                  "Cloud CDN is: %.4f+/-%.4f."%(tz, provider, mn_qoes, std_qoes))
+    '''
+
+    ## Draw CDF of session QoEs for all time zones in certain hours among 3 Cloud CDNs
+    entertain_hours = [20, 21, 22]
+    cmp_cloudcdns_qoes_cdf_per_hours(entertain_hours, "entertaining")
+    working_hours = [10, 11, 12]
+    cmp_cloudcdns_qoes_cdf_per_hours(working_hours, "working")
+
 
 
 

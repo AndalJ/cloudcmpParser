@@ -3,6 +3,7 @@ from drawlibs.draw_cdf import *
 from get_plnode_region import *
 from load_session_qoe import *
 import numpy as np
+import matplotlib as plt
 
 patterns = ['-', '+', 'x', '\\', '*', 'o', 'O', '.', '/']
 colors = ['r', 'g', 'y', 'b', 'm', 'c']
